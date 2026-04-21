@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Админ панель</title>
+<style>
+body { font-family: Arial; background:#f4f6f8; padding:20px; }
+table { width:100%; border-collapse: collapse; background:white; margin-top:20px;}
+th, td { padding:10px; border:1px solid #ddd; text-align:center; }
+th { background:#ff69b4; color:white; }
+button { padding:5px 10px; border:none; background:#e74c3c; color:white; cursor:pointer; }
+#login { max-width:300px; margin:auto; }
+</style>
+</head>
+<body>
+
+<div id="login">
+    <h3>🔐 Вход</h3>
+    <input type="password" id="pass" placeholder="Пароль">
+    <button onclick="login()">Войти</button>
+</div>
+
+<div id="admin" style="display:none;">
+    <h2>📋 Записи</h2>
+    <h3 id="income">💸 Доход: 0 ₸</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Имя</th>
+                <th>Телефон</th>
+                <th>Дата</th>
+                <th>Время</th>
+                <th>Мастер</th>
+                <th>Услуга</th>
+                <th>Цена</th>
+                <th>Удалить</th>
+            </tr>
+        </thead>
+        <tbody id="table"></tbody>
+    </table>
+</div>
+
+<script>
+const scriptURL = "https://script.google.com/macros/s/AKfycbz2AipTgivAA2-61wT_YY7pC28yFA-wfx6qwu2QWQBzG7hl8sO6FnWfo93zdBbqeY1RoQ/exec";
+let password = "";
+
+function login() {
+    password = document.getElementById("pass").value;
+    loadAdmin();
+}
+
+async function loadAdmin() {
+    const res = await fetch(`${scriptURL}?admin=1&password=${password}`);
+    const text = await res.text();
+
+    if (text === "DENIED") {
+        alert("Неверный пароль");
+        return;
+    }
+
+    document.getElementById("login").style.display = "none";
+    document.getElementById("admin").style.display = "block";
+
+    const data = JSON.parse(text);
+    const table = document.getElementById("table");
+    table.innerHTML = "";
+
+    let total = 0;
+    const today = new Date().toISOString().split('T')[0];
+
+    data.slice(1).forEach((row, i) => {
+        const tr = document.createElement("tr");
+
+        row.forEach((cell, index) => {
+            const td = document.createElement("td");
+            td.innerText = cell;
+            tr.appendChild(td);
+
+            // считаем доход за сегодня
+            if (index === 2 && cell === today) {
+                total += Number(row[6]);
+            }
+        });
+
+        // кнопка удалить
+        const td = document.createElement("td");
+        const btn = document.createElement("button");
+        btn.innerText = "❌";
+        btn.onclick = () => deleteRow(i + 1);
+        td.appendChild(btn);
+        tr.appendChild(td);
+
+        table.appendChild(tr);
+    });
+
+    document.getElementById("income").innerText = `💸 Доход за сегодня: ${total} ₸`;
+}
+
+async function deleteRow(index) {
+    if (!confirm("Удалить запись?")) return;
+
+    await fetch(scriptURL, {
+        method: "POST",
+        body: JSON.stringify({
+            action: "delete",
+            rowIndex: index,
+            password: password
+        })
+    });
+
+    loadAdmin();
+}
+
+setInterval(loadAdmin, 5000);
+</script>
+
+</body>
+</html>
