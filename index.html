@@ -9,60 +9,36 @@ table { width:100%; border-collapse: collapse; background:white; margin-top:20px
 th, td { padding:10px; border:1px solid #ddd; text-align:center; }
 th { background:#ff69b4; color:white; }
 button { padding:5px 10px; border:none; background:#e74c3c; color:white; cursor:pointer; }
-#login { max-width:300px; margin:auto; }
 </style>
 </head>
 <body>
 
-<div id="login">
-    <h3>🔐 Вход</h3>
-    <input type="password" id="pass" placeholder="Пароль">
-    <button onclick="login()">Войти</button>
-</div>
+<h2>📋 Записи</h2>
+<h3 id="income">💸 Доход: 0 ₸</h3>
 
-<div id="admin" style="display:none;">
-    <h2>📋 Записи</h2>
-    <h3 id="income">💸 Доход: 0 ₸</h3>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Имя</th>
-                <th>Телефон</th>
-                <th>Дата</th>
-                <th>Время</th>
-                <th>Мастер</th>
-                <th>Услуга</th>
-                <th>Цена</th>
-                <th>Удалить</th>
-            </tr>
-        </thead>
-        <tbody id="table"></tbody>
-    </table>
-</div>
+<table>
+<thead>
+<tr>
+<th>Имя</th>
+<th>Телефон</th>
+<th>Дата</th>
+<th>Время</th>
+<th>Мастер</th>
+<th>Услуга</th>
+<th>Цена</th>
+<th>Удалить</th>
+</tr>
+</thead>
+<tbody id="table"></tbody>
+</table>
 
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbzIRXxJxynAqL1vS8Wx64iiqXyTKUWxPCrr9xpvbmPvF52sEqMpx3f2ficKYlnUsVg6rA/exec";
-let password = "";
-
-function login() {
-    password = document.getElementById("pass").value;
-    loadAdmin();
-}
+const scriptURL = "ТВОЯ_ССЫЛКА";
 
 async function loadAdmin() {
-    const res = await fetch(`${scriptURL}?admin=1&password=${password}`);
-    const text = await res.text();
+    const res = await fetch(scriptURL + "?admin=1&t=" + Date.now());
+    const data = await res.json();
 
-    if (text === "DENIED") {
-        alert("Неверный пароль");
-        return;
-    }
-
-    document.getElementById("login").style.display = "none";
-    document.getElementById("admin").style.display = "block";
-
-    const data = JSON.parse(text);
     const table = document.getElementById("table");
     table.innerHTML = "";
 
@@ -77,13 +53,11 @@ async function loadAdmin() {
             td.innerText = cell;
             tr.appendChild(td);
 
-            // считаем доход за сегодня
             if (index === 2 && cell === today) {
                 total += Number(row[6]);
             }
         });
 
-        // кнопка удалить
         const td = document.createElement("td");
         const btn = document.createElement("button");
         btn.innerText = "❌";
@@ -104,14 +78,14 @@ async function deleteRow(index) {
         method: "POST",
         body: JSON.stringify({
             action: "delete",
-            rowIndex: index,
-            password: password
+            rowIndex: index
         })
     });
 
     loadAdmin();
 }
 
+loadAdmin();
 setInterval(loadAdmin, 5000);
 </script>
 
